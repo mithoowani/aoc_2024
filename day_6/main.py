@@ -1,5 +1,4 @@
 import numpy as np
-import time
 
 TEST_INPUT = """....#.....
 .........#
@@ -12,6 +11,27 @@ TEST_INPUT = """....#.....
 #.........
 ......#..."""
 
+# From reddit
+TEST_INPUT_2 = """.##..
+....#
+.....
+.^.#.
+....."""
+
+# From reddit
+TEST_INPUT_3 = """.#....
+.....#
+#..#..
+..#...
+.^...#
+....#."""
+
+# Integers in this dictionary are arbitrary
+DIRECTION_TO_INT = {'up': 1,
+					'down': 2,
+					'left': 3,
+					'right': 4}
+
 
 def parse_input(puzzle_input):
 	# Return puzzle input as a 2-d numpy array
@@ -21,14 +41,6 @@ def parse_input(puzzle_input):
 	for line in array:
 		array_lists.append(list(line))
 	return np.array(array_lists)
-
-
-def initialize_empty_visited(grid: np.array, guard_loc) -> np.array:
-	# Returns an empty np array of all locations visited so far
-	# 0 = not visited; 1 = visited
-	visited = np.zeros_like(grid, dtype='int64')
-	visited = mark_visited(visited, guard_loc)
-	return visited
 
 
 def get_new_direction(grid, guard_loc, direction) -> str:
@@ -55,14 +67,14 @@ def move_guard(guard_loc, direction) -> np.array:
 		new_guard_loc = np.array([guard_loc[0] + 1, guard_loc[1]])
 	elif direction == 'left':
 		new_guard_loc = np.array([guard_loc[0], guard_loc[1] - 1])
-	else:
+	elif direction == 'right':
 		new_guard_loc = np.array([guard_loc[0], guard_loc[1] + 1])
 	return new_guard_loc
 
 
-def mark_visited(visited, guard_loc) -> np.array:
+def mark_visited(visited, guard_loc, direction) -> np.array:
 	# Finds the guard and marks his current location as visited
-	visited[guard_loc[0], guard_loc[1]] = 1
+	visited[guard_loc[0], guard_loc[1]] = DIRECTION_TO_INT[direction]
 	return visited
 
 
@@ -81,7 +93,7 @@ def is_exiting(grid, guard_loc, direction) -> bool:
 
 
 # Test input
-# puzzle_grid = parse_input(TEST_INPUT)
+# puzzle_grid = parse_input(TEST_INPUT_3)
 # print(puzzle_grid)
 
 # Real input
@@ -91,32 +103,45 @@ with open('input.txt', 'r') as f:
 current_loc = np.argwhere(puzzle_grid == '^')[0]
 # print(current_pos)
 
-visited_squares = initialize_empty_visited(puzzle_grid, current_loc)
-# print(visited_squares)
-
 current_direction = 'up'  # Assumption is that the guard always starts facing upward
+
+visited_squares = np.zeros_like(puzzle_grid, dtype='int64')
+visited_squares = mark_visited(visited_squares, current_loc, current_direction)
+# print(visited_squares)
 
 # Part A
 while not is_exiting(puzzle_grid, current_loc, current_direction):
 	current_direction = get_new_direction(puzzle_grid, current_loc, current_direction)
 	current_loc = move_guard(current_loc, current_direction)
-	visited_squares = mark_visited(visited_squares, current_loc)
-print(np.count_nonzero(visited_squares))
+	visited_squares = mark_visited(visited_squares, current_loc, current_direction)
+print('Part A:', np.count_nonzero(visited_squares))
 
-"""
-Part B pseudocode
+# Part B
+count = 0
 
-for location in visited:
-	re_initialize_grid()
-	add location of new obstacle to grid
-	re_initialize_current_location()
-	re_initialize_visited()
-	while not is_exiting:
-		if visited_squares[current_loc] == direction_to_int[current_direction]
+# Only evaluate positions of the new obstacle that the guard originally visited in part A
+all_possible_locations = np.argwhere(visited_squares > 0)
+starting_loc = np.argwhere(puzzle_grid == '^')[0]
+filt = ~(all_possible_locations == [starting_loc[0], starting_loc[1]]).all(axis=1)
+all_possible_locations = all_possible_locations[filt]
+
+for location in all_possible_locations:
+	# Re-initialize all variables
+	new_grid = np.copy(puzzle_grid)
+	current_loc = starting_loc
+	current_direction = 'up'
+	visited_squares = np.zeros_like(new_grid, dtype='int64')
+
+	# Add new obstacle to the grid
+	new_grid[location[0], location[1]] = '#'
+
+	while not is_exiting(new_grid, current_loc, current_direction):
+		if visited_squares[current_loc[0], current_loc[1]] == DIRECTION_TO_INT[current_direction]:
 			count += 1
 			break
-		else:
-			current_direction = get_new_direction(puzzle_grid, current_loc, current_direction)
-			current_loc = move_guard(current_loc, current_direction)
-			visited_squares = mark_visited(visited_squares, current_loc) # code 1 for up, 2 for down, etc
-"""
+		visited_squares = mark_visited(visited_squares, current_loc, current_direction)
+		for _ in range(3):  # This takes into account that guard might face another obstacle immediately after turning
+			current_direction = get_new_direction(new_grid, current_loc, current_direction)
+		current_loc = move_guard(current_loc, current_direction)
+
+print('Part B:', count)
