@@ -97,12 +97,26 @@ visited_squares = initialize_empty_visited(puzzle_grid, current_loc)
 current_direction = 'up'  # Assumption is that the guard always starts facing upward
 
 # Part A
-pre_time = time.time()
 while not is_exiting(puzzle_grid, current_loc, current_direction):
 	current_direction = get_new_direction(puzzle_grid, current_loc, current_direction)
 	current_loc = move_guard(current_loc, current_direction)
 	visited_squares = mark_visited(visited_squares, current_loc)
-post_time = time.time()
+print(np.count_nonzero(visited_squares))
 
-print(np.sum(visited_squares))
-print(post_time - pre_time)
+"""
+Part B pseudocode
+
+for location in visited:
+	re_initialize_grid()
+	add location of new obstacle to grid
+	re_initialize_current_location()
+	re_initialize_visited()
+	while not is_exiting:
+		if visited_squares[current_loc] == direction_to_int[current_direction]
+			count += 1
+			break
+		else:
+			current_direction = get_new_direction(puzzle_grid, current_loc, current_direction)
+			current_loc = move_guard(current_loc, current_direction)
+			visited_squares = mark_visited(visited_squares, current_loc) # code 1 for up, 2 for down, etc
+"""
