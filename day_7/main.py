@@ -23,6 +23,7 @@ def parse_input(puzzle_input: str) -> (tuple, tuple):
 
 
 def concatenate(num_1, num_2):
+	# Code for || operator (Part B)
 	concatenated = int(str(num_1) + str(num_2))
 	return concatenated
 
