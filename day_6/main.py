@@ -136,6 +136,8 @@ for location in all_possible_locations:
 	new_grid[location[0], location[1]] = '#'
 
 	while not is_exiting(new_grid, current_loc, current_direction):
+		# If a square has already been visited while guard is traveling in same direction, then this
+		# constitutes a loop
 		if visited_squares[current_loc[0], current_loc[1]] == DIRECTION_TO_INT[current_direction]:
 			count += 1
 			break
