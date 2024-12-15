@@ -22,27 +22,41 @@ def parse_input(puzzle_input: str) -> (tuple, tuple):
 	return tuple(answers), tuple(components)
 
 
-def get_result(entry_, index=1, result_so_far=None):
-	if result_so_far is None:
-		result_so_far = entry_[0]
-	# print(index, result_so_far)
+def concatenate(num_1, num_2):
+	concatenated = int(str(num_1) + str(num_2))
+	return concatenated
+
+
+def get_result(nums, index=1, result_so_far=None):
 	global answer_flag
-	if result_so_far == solution:
+
+	if result_so_far is None:
+		result_so_far = nums[0]
+
+	# Have to use all the numbers in order for it to be a valid solution;
+	# i.e. only evaluate this at the end of a tree
+	if result_so_far == solution and index == len(nums):
 		answer_flag = True
-	elif index < len(entry_):
-		get_result(entry_, index + 1, mul(result_so_far, entry_[index]))
-		get_result(entry_, index + 1, add(result_so_far, entry_[index]))
+
+	elif index < len(nums):
+		get_result(nums, index + 1, mul(result_so_far, nums[index]))
+		get_result(nums, index + 1, add(result_so_far, nums[index]))
+
+		# Part B
+		get_result(nums, index + 1, concatenate(result_so_far, nums[index]))
 
 
+# Test input
 # all_answers, all_components = parse_input(TEST_INPUT)
 
+# Real input
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
-
 all_answers, all_components = parse_input(REAL_INPUT)
 
 result = 0
 
+# Part B
 for entry in zip(all_answers, all_components):
 	answer_flag = False
 	solution = entry[0]
@@ -50,4 +64,4 @@ for entry in zip(all_answers, all_components):
 	if answer_flag:
 		result += solution
 
-print(result)
+print('Part B Result:', result)
