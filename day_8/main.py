@@ -34,10 +34,10 @@ with open('input.txt') as f:
 towers, num_rows, num_cols = parse_input(REAL_INPUT)
 
 antinodes = dict()
+antinodes_b = dict()
 
 letters_lower = 'abcdefghijklmnopqrstuvwxyz'
-letters_upper = letters_lower.upper()
-characters = letters_lower + letters_upper + '0123456789'
+characters = letters_lower + letters_lower.upper() + '0123456789'
 
 for char in characters:
 
@@ -49,6 +49,11 @@ for char in characters:
 
 	# identify all pairs of towers
 	for i in relevant_towers:
+
+		# if there is at least one pair of towers, then mark each tower location as an antinode (for part b)
+		if len(relevant_towers) > 1:
+			antinodes_b[(i[0], i[1])] = 1
+
 		for j in relevant_towers:
 			if i != j:
 				row_delta = i[0] - j[0]
@@ -57,4 +62,11 @@ for char in characters:
 				if 0 <= antinode_row < num_rows and 0 <= antinode_col < num_cols:
 					antinodes[(antinode_row, antinode_col)] = 1
 
+					# part b code
+					while 0 <= antinode_row < num_rows and 0 <= antinode_col < num_cols:
+						antinodes_b[(antinode_row, antinode_col)] = 1
+						antinode_row += row_delta
+						antinode_col += col_delta
+
 print(f'Part A: {len(antinodes)}')
+print(f'Part B: {len(antinodes_b)}')
