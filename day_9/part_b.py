@@ -24,10 +24,17 @@ class FreeSpace:
 	size: int
 
 
+"""
+Files could be a list of File dataclasses
+FreeSpaces could be a list; where the index represents the start position and value represents size
+"""
+
+
 def parse_input(puzzle_input):
 	file_num = 0
 	index = 0
-	filesystem_ = []
+	all_files = []
+	all_free_spaces = []
 
 	# populate the filesystem
 	for i, size in enumerate(puzzle_input):
@@ -36,17 +43,19 @@ def parse_input(puzzle_input):
 		# representing a file
 		if i % 2 == 0:
 			file = File(name=file_num, size=size)
-			filesystem_.append(file)
+			all_files.append(file)
+			for j in range(file.size):
+				all_free_spaces.append(None)
 			file_num += 1
 			index += size
 
 		# representing free space
 		else:
 			if size > 0:
-				filesystem_.append(FreeSpace(size=size))
+				all_free_spaces.append(size)
 			index += size
 
-	return filesystem_
+	return all_files, all_free_spaces
 
 
 """
@@ -64,41 +73,43 @@ TODO: There's got to be a cleaner way to write this
 """
 
 
-def free_up_space(fs, k):
-	if k == len(fs) - 1 and type(fs[k - 1]) is FreeSpace:
-		fs[k - 1].size += fs[k].size
-		del fs[k]
-		k -= 1
-
-	elif k == len(fs) - 1 and type(fs[k - 1]) is File:
-		fs[k] = FreeSpace(size=fs[k].size)
-
-	elif type(fs[k - 1]) is File and type(fs[k + 1]) is File:
-		fs[k] = FreeSpace(size=fs[k].size)
-
-	elif type(fs[k - 1]) is File and type(fs[k + 1]) is FreeSpace:
-		fs[k + 1].size += fs[k].size
-		del fs[k]
-		k -= 1
-
-	elif type(fs[k - 1]) is FreeSpace and type(fs[k + 1]) is File:
-		fs[k - 1].size += fs[k].size
-		del fs[k]
-		k -= 1
-
-	elif type(fs[k - 1]) is FreeSpace and type(fs[k + 1]) is FreeSpace:
-		fs[k - 1].size += fs[k].size + fs[k + 1].size
-		del fs[k + 1]  # have to delete the rightmost element first
-		del fs[k]
-		k -= 2
-
-	return fs, k
+# def free_up_space(fs, k):
+# 	if k == len(fs) - 1 and type(fs[k - 1]) is FreeSpace:
+# 		fs[k - 1].size += fs[k].size
+# 		del fs[k]
+# 		k -= 1
+#
+# 	elif k == len(fs) - 1 and type(fs[k - 1]) is File:
+# 		fs[k] = FreeSpace(size=fs[k].size)
+#
+# 	elif type(fs[k - 1]) is File and type(fs[k + 1]) is File:
+# 		fs[k] = FreeSpace(size=fs[k].size)
+#
+# 	elif type(fs[k - 1]) is File and type(fs[k + 1]) is FreeSpace:
+# 		fs[k + 1].size += fs[k].size
+# 		del fs[k]
+# 		k -= 1
+#
+# 	elif type(fs[k - 1]) is FreeSpace and type(fs[k + 1]) is File:
+# 		fs[k - 1].size += fs[k].size
+# 		del fs[k]
+# 		k -= 1
+#
+# 	elif type(fs[k - 1]) is FreeSpace and type(fs[k + 1]) is FreeSpace:
+# 		fs[k - 1].size += fs[k].size + fs[k + 1].size
+# 		del fs[k + 1]  # have to delete the rightmost element first
+# 		del fs[k]
+# 		k -= 2
+#
+# 	return fs, k
 
 
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
-filesystem = parse_input(REAL_INPUT)
+files, free_spaces = parse_input(TEST_INPUT)
+
+pprint(free_spaces)
 
 """
 Could probably re-write this with two separate lists;
@@ -111,96 +122,39 @@ Then iterate through free spaces UP TO start index of the file in question to fi
 
 """
 
-j = len(filesystem) - 1
-
-while not all(item.checked for item in filesystem if type(item) is File):
-
-	# iterate through files first
-	while j > 0 and (type(filesystem[j]) is not File or filesystem[j].checked):
-		j -= 1
-
-	filesystem[j].checked = True
-
-	for i, free_space in enumerate(filesystem[:j]):
-
-		if type(filesystem[i]) is FreeSpace:
-
-			if filesystem[i].size == filesystem[j].size:
-				filesystem[i], filesystem[j] = filesystem[j], filesystem[i]
-				break
-
-			elif filesystem[i].size > filesystem[j].size:
-				filesystem[i].size -= filesystem[j].size
-				filesystem.insert(i, filesystem[j])
-				filesystem[j+1] = FreeSpace(size=filesystem[i].size)
-				break
-
-	# if file_moved:
-	# 	filesystem, j = free_up_space(filesystem, j)
-	#
-	# elif file_inserted:
-	# 	filesystem, j = free_up_space(filesystem, j + 1)
-
-# pprint(filesystem)
-
-checksum = 0
-index = 0
-for item in filesystem:
-	if type(item) is File:
-		for position in range(index, index + item.size):
-			checksum += item.name * position
-	index += item.size
-
-print(checksum)
-
-# for i, file in enumerate(filesystem[::-1]):
-# 	file_moved = False
-# 	forward_index = -1 * (i + 1)
+# j = len(filesystem) - 1
 #
-# 	if type(file) is File and not file.checked:
-# 		file.checked = True
+# while not all(item.checked for item in filesystem if type(item) is File):
 #
-# 		for j, free_space in enumerate(filesystem):
-# 			if type(free_space) is FreeSpace:
-# 				if free_space.size == file.size:
-# 					filesystem[j] = file
-# 					file_moved = True
-# 					break
+# 	# iterate through files first
+# 	while j > 0 and (type(filesystem[j]) is not File or filesystem[j].checked):
+# 		j -= 1
 #
-# 				elif free_space.size > file.size:
-# 					filesystem[j].size -= file.size
-# 					filesystem.insert(j, file)
-# 					file_moved = True
-# 					break
+# 	filesystem[j].checked = True
 #
+# 	for i, free_space in enumerate(filesystem[:j]):
 #
-# 	# I think the issue is modifying the list as it's being iterated on
-# 	if file_moved:
-# 		filesystem = free_up_space(filesystem, forward_index)
-# 		pass
+# 		if type(filesystem[i]) is FreeSpace:
 #
-# pprint(filesystem)
+# 			if filesystem[i].size == filesystem[j].size:
+# 				filesystem[i], filesystem[j] = filesystem[j], filesystem[i]
+# 				break
+#
+# 			elif filesystem[i].size > filesystem[j].size:
+# 				filesystem[i].size -= filesystem[j].size
+# 				filesystem.insert(i, filesystem[j])
+# 				filesystem[j + 1] = FreeSpace(size=filesystem[i].size)
+# 				break
 
 
-#
-# for file in files[::-1]:
-# 	free_space_to_delete = None
-# 	for i, free_space in enumerate(spaces):
-# 		if free_space.size >= file.size:
-# 			file.start_index = free_space.start_index
-# 			free_space.size -= file.size
-# 			free_space.start_index += file.size
-# 			if free_space.size == 0:
-# 				free_space_to_delete = i
-# 			break
-# 	if free_space_to_delete is not None:
-# 		del spaces[free_space_to_delete]
-#
-# pprint(sorted(files, key=lambda x: x.start_index))
-# pprint(spaces)
-#
 # checksum = 0
-# for file in files:
-# 	for position in range(file.start_index, file.start_index+file.size):
-# 		checksum += file.name * position
+# index = 0
+# for item in filesystem:
+# 	if type(item) is File:
+# 		for position in range(index, index + item.size):
+# 			checksum += item.name * position
+# 	index += item.size
+#
 # print(checksum)
+
+
