@@ -23,6 +23,19 @@ MIIIIIJJEE
 MIIISIJEEE
 MMMISSJEEE"""
 
+TEST_INPUT_4 = """EEEEE
+EXXXX
+EEEEE
+EXXXX
+EEEEE"""
+
+TEST_INPUT_5 = """AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA"""
+
 
 class Vertex:
 	"""
@@ -33,12 +46,35 @@ class Vertex:
 		self.value = value
 		self.location = location
 		self.adjacent_vertices = []
+		self._free_sides = {
+			'left': True,
+			'right': True,
+			'top': True,
+			'bottom': True
+		}
 
 	def add_adjacent_vertex(self, *vertices):
 		for vertex in vertices:
 			if vertex not in self.adjacent_vertices:
 				self.adjacent_vertices.append(vertex)
 				vertex.add_adjacent_vertex(self)  # bidirectional relationship
+
+	@property
+	def free_sides(self):
+
+		i, j = self.location[0], self.location[1]
+
+		for neighbour in self.adjacent_vertices:
+			if neighbour.location == (i + 1, j):
+				self._free_sides['bottom'] = False
+			elif neighbour.location == (i - 1, j):
+				self._free_sides['top'] = False
+			elif neighbour.location == (i, j + 1):
+				self._free_sides['right'] = False
+			elif neighbour.location == (i, j - 1):
+				self._free_sides['left'] = False
+
+		return self._free_sides
 
 	def __repr__(self):
 		return f'{self.value}'
@@ -95,16 +131,54 @@ def get_perimeter(_island):
 	return perimeter
 
 
+def get_sides(_island, side='left'):
+	num_sides = 0
+	squares_with_free_side = [location for location, vertex in _island.items() if vertex.free_sides[side] is True]
+	if side in ['left', 'right']:
+		squares_with_free_side.sort(key=lambda x: (x[1], x[0]))
+	else:
+		squares_with_free_side.sort(key=lambda x: (x[0], x[1]))
+
+	current_square = None
+	for square in squares_with_free_side:
+		if current_square is None:
+			num_sides += 1
+		elif side in ['top', 'bottom'] and abs(square[1] - current_square[1]) == 1 and square[0] == current_square[0]:
+			pass
+		elif side in ['left', 'right'] and abs(square[0] - current_square[0]) == 1 and square[1] == current_square[1]:
+			pass
+		else:
+			num_sides += 1
+		current_square = square
+
+	return num_sides
+
+
+def get_total_sides(_island):
+	total_slides = sum([get_sides(_island, side) for side in 'left right top bottom'.split()])
+	return total_slides
+
+
+# right_side_free = [location for location, vertex in _island if vertex.free_sides['right'] is True]
+#
+#
+# top_side_free = [location for location, vertex in _island if vertex.free_sides['top'] is True]
+#
+#
+# bottom_side_free = [location for location, vertex in _island if vertex.free_sides['bottom'] is True]
+
+
 def populate_islands(array: np.array):
 	all_visited = {}
 	answers = []
+	answers_b = []
 
 	for i in range(array.shape[0]):
 		for j in range(array.shape[1]):
 			if array[i, j] == '0':  # ignore padded values
 				continue
 
-			elif all_visited.get((i, j)) is True:
+			elif all_visited.get((i, j)):
 				continue
 
 			else:
@@ -115,18 +189,26 @@ def populate_islands(array: np.array):
 
 			area = len(island)
 			perimeter = get_perimeter(island)
+			sides = get_total_sides(island)
 			answers.append((str(start.value), area * perimeter))
+			answers_b.append((str(start.value), area * sides))
 	# print(f'{start.value}: {area} * {perimeter} = {area * perimeter}')
-	return answers
+	return answers_b
 
 
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
 puzzle_array = parse_input(REAL_INPUT)
-
 scores = populate_islands(puzzle_array)
-pprint(scores)
 
+# Part A
+
+# pprint(scores)
+# total_score = sum(score[1] for score in scores)
+# print(total_score)
+
+# Part B
+pprint(scores)
 total_score = sum(score[1] for score in scores)
 print(total_score)
