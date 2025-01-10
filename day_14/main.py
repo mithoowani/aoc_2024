@@ -30,6 +30,7 @@ class Robot:
 
 
 def parse_input(puzzle_input):
+	"""Parses puzzle input, returned as a list of Robots"""
 	robots = []
 	re_string = r"-?\d+"
 	for robot in puzzle_input.split('\n'):
@@ -92,6 +93,8 @@ def part_b(bots_, dim):
 	:param dim: grid size (x, y) = (number of cols, number of rows)
 	:return: None
 	"""
+
+	# Determines the position of the robots at each second from 0 to 10_000
 	for second in range(10_000):
 		grid_ = np.full((dim[1], dim[0]), '.')
 		for bot in bots_:
@@ -99,8 +102,8 @@ def part_b(bots_, dim):
 			bot.y = (bot.start_pos[1] + second * bot.velocity[1]) % dimensions[1]
 			grid_[bot.y, bot.x] = '#'
 
-		# Making an assumption that the christmas tree has to have a long line of robots
-		# next to one another
+		# Making an assumption that the Christmas tree has to have a long line of robots next to one another
+		# If this pattern is found, prints the grid at the corresponding second
 		for line in grid_:
 			string_line = ''.join(list(line))
 			if '#############' in string_line:
@@ -113,10 +116,6 @@ def part_b(bots_, dim):
 dimensions = (101, 103)
 num_seconds = 100
 
-# Test input
-# bots = parse_input(TEST_INPUT)
-
-# Real input
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
