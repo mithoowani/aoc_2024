@@ -20,6 +20,12 @@ Prize: X=18641, Y=10279"""
 
 
 def parse_input(puzzle_input):
+	"""
+	Parses puzzle input into a list of claw machines
+	Each claw machine is a list, e.g. : Button A: X+94[0], Y+34[1]
+								 		Button B: X+22[2], Y+67[3]
+										Prize: X=8400[4], Y=5400[5]
+	"""
 	claw_machines = []
 	str_to_match = """\s|=|\+|,"""
 	nums_only = [word for word in re.split(str_to_match, puzzle_input) if word.isnumeric()]
@@ -34,30 +40,30 @@ def parse_input(puzzle_input):
 
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
-
 all_machines = parse_input(REAL_INPUT)
 
-# pprint(all_machines)
-
-total = 0
-part_b = True
+total_a = 0
+total_b = 0
 
 for machine in all_machines:
+
+	# System of linear equations, e.g.
+	# a(94) + b(22) = 8400
+	# a(34) + b(67) = 5400
 	A = [[machine[0], machine[2]], [machine[1], machine[3]]]
+	B_part_a = np.array([machine[4], machine[5]])
+	B_part_b = np.array([machine[4] + 10000000000000, machine[5] + 10000000000000])
 
-	if part_b:
-		B = np.array([machine[4] + 10000000000000, machine[5] + 10000000000000]).astype('float64')
-	else:
-		B = np.array([machine[4], machine[5]]).astype('float64')
+	# rounding to 3 decimals is arbitrary but avoids floating point errors
+	solution_a = np.round(np.linalg.solve(A, B_part_a), decimals=3)
+	solution_b = np.round(np.linalg.solve(A, B_part_b), decimals=3)
 
-	solution = np.round(np.linalg.solve(A, B), decimals=3)
-	print(solution[0], solution[1])
-	# print(solution)
+	# if a and b in the linear equations above are integers, then the prize can be won
+	if np.all(solution_a % 1 == 0):
+		total_a += 3 * solution_a[0] + solution_a[1]
 
-	if np.all(solution % 1 == 0):
-		total += 3 * solution[0] + solution[1]
+	if np.all(solution_b % 1 == 0):
+		total_b += 3 * solution_b[0] + solution_b[1]
 
-print(f'Solution: {int(total)}')
-
-#87847634286897
-#3 decimals 87596249540359  # Correct, but not really sure why 3 decimals were needed. Look up solutions
+print(f'Part A: {int(total_a)}')
+print(f'Part B: {int(total_b)}')
