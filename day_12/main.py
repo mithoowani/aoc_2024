@@ -46,6 +46,9 @@ class Vertex:
 		self.value = value
 		self.location = location
 		self.adjacent_vertices = []
+
+		# Used in part b
+		# Represents sides that have "free" edges
 		self._free_sides = {
 			'left': True,
 			'right': True,
@@ -61,7 +64,9 @@ class Vertex:
 
 	@property
 	def free_sides(self):
-
+		"""
+		Returns the vertex's free sides by examining its neighbours
+		"""
 		i, j = self.location[0], self.location[1]
 
 		for neighbour in self.adjacent_vertices:
@@ -80,7 +85,7 @@ class Vertex:
 		return f'{self.value}'
 
 
-def parse_input(puzzle_input):
+def parse_input(puzzle_input: str):
 	"""
 	Return puzzle input as a 2-d numpy array, padded with '0' values
 	"""
@@ -95,17 +100,19 @@ def parse_input(puzzle_input):
 	return padded_array
 
 
-def populate(vert, array, seen=None):
+def populate(vert: Vertex, array: np.array, seen=None) -> dict:
 	"""
-	Returns the area and perimeter of an island starting at vert
+	Returns a list of all tiles in an island starting at the vertex "vert"
 	"""
 
+	# dictionary with key = coordinate, value = Vertex with that coordinate
 	if seen is None:
 		seen = {}
 
 	i, j = vert.location[0], vert.location[1]
 	seen[(i, j)] = vert
 
+	# coordinates for all of vert's neighbours
 	neighbours = {
 		'up': (i - 1, j),
 		'down': (i + 1, j),
@@ -124,21 +131,29 @@ def populate(vert, array, seen=None):
 	return seen
 
 
-def get_perimeter(_island):
+def get_perimeter(_island: dict) -> int:
+	"""Returns perimeter of the island (for part a)"""
 	perimeter = 0
 	for vertex in _island.values():
 		perimeter += 4 - len(vertex.adjacent_vertices)
 	return perimeter
 
 
-def get_sides(_island, side='left'):
+def get_sides(_island: dict, side='left') -> int:
+	"""
+	Returns the number of left, right, top and bottom sides of the island (for part b)
+	"""
+
 	num_sides = 0
 	squares_with_free_side = [location for location, vertex in _island.items() if vertex.free_sides[side] is True]
 	if side in ['left', 'right']:
-		squares_with_free_side.sort(key=lambda x: (x[1], x[0]))
+		squares_with_free_side.sort(key=lambda x: (x[1], x[0]))  # sort by col first, then row
 	else:
-		squares_with_free_side.sort(key=lambda x: (x[0], x[1]))
+		squares_with_free_side.sort(key=lambda x: (x[0], x[1]))  # sort by row first, then col
 
+	# The approach is to iterate through every square with the free side
+	# If the next square in the sorted list is a neighbour (e.g. same row but col differs by only 1) then it's part of the
+	# same side, otherwise it's part of a new side (and num_sides is incremented by 1)
 	current_square = None
 	for square in squares_with_free_side:
 		if current_square is None:
@@ -154,23 +169,20 @@ def get_sides(_island, side='left'):
 	return num_sides
 
 
-def get_total_sides(_island):
+def get_total_sides(_island: dict) -> int:
+	"""Returns the total sides of the island (for part b)"""
 	total_slides = sum([get_sides(_island, side) for side in 'left right top bottom'.split()])
 	return total_slides
 
 
-# right_side_free = [location for location, vertex in _island if vertex.free_sides['right'] is True]
-#
-#
-# top_side_free = [location for location, vertex in _island if vertex.free_sides['top'] is True]
-#
-#
-# bottom_side_free = [location for location, vertex in _island if vertex.free_sides['bottom'] is True]
-
-
-def populate_islands(array: np.array):
+def solve_puzzle(array: np.array):
+	"""
+	Solves parts a and b
+	Approach is to iterates through every square; when a previously unvisited square is encountered,
+	populates the island and calculates its relevant parameters (area, perimeters, num_sides)
+	"""
 	all_visited = {}
-	answers = []
+	answers_a = []
 	answers_b = []
 
 	for i in range(array.shape[0]):
@@ -190,25 +202,24 @@ def populate_islands(array: np.array):
 			area = len(island)
 			perimeter = get_perimeter(island)
 			sides = get_total_sides(island)
-			answers.append((str(start.value), area * perimeter))
+			answers_a.append((str(start.value), area * perimeter))
 			answers_b.append((str(start.value), area * sides))
-	# print(f'{start.value}: {area} * {perimeter} = {area * perimeter}')
-	return answers_b
+
+	return answers_a, answers_b
 
 
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
 puzzle_array = parse_input(REAL_INPUT)
-scores = populate_islands(puzzle_array)
+scores_a, scores_b = solve_puzzle(puzzle_array)
 
 # Part A
-
-# pprint(scores)
-# total_score = sum(score[1] for score in scores)
-# print(total_score)
+# pprint(scores_a)
+total_score = sum(score[1] for score in scores_a)
+print(f'Part A: {total_score}')
 
 # Part B
-pprint(scores)
-total_score = sum(score[1] for score in scores)
-print(total_score)
+# pprint(scores_b)
+total_score = sum(score[1] for score in scores_b)
+print(f'Part B: {total_score}')
