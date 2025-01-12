@@ -235,7 +235,7 @@ def get_sum_gps(maze_: np.array) -> int:
 
 
 with open('input.txt', 'r') as f:
-	REAL_INPUT = f.read().strip()
+	REAL_INPUT = f.read()
 
 moves, maze = parse_input(REAL_INPUT)
 
