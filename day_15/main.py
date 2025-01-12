@@ -52,24 +52,35 @@ def parse_input(puzzle_input: str):
 
 
 def move_robot(direction_: str, maze_: np.array, loc_: tuple):
+	"""
+	Moves the robot and boxes in the direction specified by direction_
+	:return: maze_ (maze after moves have been made) and new_robot_loc (robot's new location)
+	"""
 	new_robot_loc = loc_
 	loc_row = loc_[0]
 	loc_col = loc_[1]
 
 	i = 1
 
+	# left
 	if direction_ == '<':
+
+		# advances a pointer to the column immediately preceding the last box
 		while maze_[loc_row, loc_col - i] == 'O':
 			i += 1
 
+		# if this space is a free space; then moves the robot one space left
 		if maze_[loc_row, loc_col - i] == '.':
 			maze_[loc_row, loc_col] = '.'
 			new_robot_loc = (loc_row, loc_col - 1)
 			maze_[loc_row, loc_col - 1] = '@'
 
+			# if there was 1 or more boxes between the robot's initial position and the space
+			# then it moves the leftmost box one position to the left
 			if i > 1:
 				maze_[loc_row, loc_col - i] = 'O'
 
+	# right
 	elif direction_ == '>':
 		while maze_[loc_row, loc_col + i] == 'O':
 			i += 1
@@ -82,6 +93,7 @@ def move_robot(direction_: str, maze_: np.array, loc_: tuple):
 			if i > 1:
 				maze_[loc_row, loc_col + i] = 'O'
 
+	# up
 	elif direction_ == '^':
 		while maze_[loc_row - i, loc_col] == 'O':
 			i += 1
@@ -94,6 +106,7 @@ def move_robot(direction_: str, maze_: np.array, loc_: tuple):
 			if i > 1:
 				maze_[loc_row - i, loc_col] = 'O'
 
+	# down
 	elif direction_ == 'v':
 		while maze_[loc_row + i, loc_col] == 'O':
 			i += 1
@@ -110,15 +123,14 @@ def move_robot(direction_: str, maze_: np.array, loc_: tuple):
 
 
 def get_sum_gps(maze_: np.array) -> int:
+	"""Returns the sum of all GPS coordinates for a maze (using rules from part a)"""
 	box_locations = np.where(maze_ == 'O')
+
+	# GPS = 100 * distance from the top + distance from the left
 	result = np.sum(box_locations[0] * 100 + box_locations[1])
+
 	return result
 
-
-# moves, maze, loc = parse_input(TEST_INPUT_2)
-# print(moves)
-# print(maze)
-# print(loc)
 
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
@@ -130,5 +142,4 @@ while moves:
 	maze, loc = move_robot(direction, maze, loc)
 	answer = get_sum_gps(maze)
 
-print(maze)
-print(answer)
+print(f'Part A: {answer}')
