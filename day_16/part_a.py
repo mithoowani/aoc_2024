@@ -3,6 +3,7 @@ Graph/location data structure and algorithms inspired by:
 https://www.redblobgames.com/pathfinding/a-star/introduction.html
 """
 
+from collections import defaultdict, deque
 from queue import PriorityQueue
 from pprint import pprint
 from dataclasses import dataclass
@@ -143,7 +144,7 @@ def dijkstra_shortest_path(start, end, graph_):
 	current = None
 	frontier = PriorityQueue()
 	cost_so_far = {start: 0}
-	came_from = {start: None}
+	came_from = defaultdict(set)
 	frontier.put((cost_so_far[start], start))
 
 	while frontier:
@@ -154,12 +155,12 @@ def dijkstra_shortest_path(start, end, graph_):
 
 		for neighbour in graph_.neighbours(current):
 			new_cost = cost_so_far[current] + graph_.cost(current, neighbour)
-			if neighbour not in cost_so_far or new_cost < cost_so_far[neighbour]:
+			if neighbour not in cost_so_far or new_cost <= cost_so_far[neighbour]:
 				cost_so_far[neighbour] = new_cost
-				came_from[neighbour] = current
+				came_from[neighbour].add(current)
 				frontier.put((new_cost, neighbour))
 
-	return cost_so_far.get(current)
+	return cost_so_far.get(current), came_from
 
 
 with open('input.txt', 'r') as f:
@@ -168,16 +169,32 @@ with open('input.txt', 'r') as f:
 # for test input; two possible ways to reach end goal
 # graph = Graph(parse_input(TEST_INPUT_2))
 # start, end_1, end_2 = get_start_end_locations(graph)
-# shortest_path_1 = dijkstra_shortest_path(start, end_1, graph)
-# shortest_path_2 = dijkstra_shortest_path(start, end_2, graph)
-# print(min(shortest_path_1, shortest_path_2))
-
+# shortest_path_1, path_1 = dijkstra_shortest_path(start, end_1, graph)
+# shortest_path_2, path_2 = dijkstra_shortest_path(start, end_2, graph)
 
 # for real input, only one way to reach end goal
 graph = Graph(parse_input(REAL_INPUT))
 start, end_east, end_north = get_start_end_locations(graph)
-shortest_path = dijkstra_shortest_path(start, end_east, graph)
+shortest_path, path_2 = dijkstra_shortest_path(start, end_east, graph)
 print(f'Part A: {shortest_path}')
+
+# do a depth first search along path 1 going from end to start?
+current = end_east
+all_visited = set()
+path = deque()
+path.append(current)
+while path:
+	current = path.popleft()
+	all_visited.add((current.row, current.col))
+	for tile in path_2[current]:
+		if tile not in path:
+			path.append(tile)
+# print(all_visited)
+print(len(all_visited))
+
+
+# print(min(shortest_path_1, shortest_path_2))
+# print(length_1)
 
 # print(graph)
 
