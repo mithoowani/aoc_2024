@@ -155,10 +155,12 @@ def dijkstra_shortest_path(start, end, graph_):
 
 		for neighbour in graph_.neighbours(current):
 			new_cost = cost_so_far[current] + graph_.cost(current, neighbour)
-			if neighbour not in cost_so_far or new_cost <= cost_so_far[neighbour]:
+			if neighbour not in cost_so_far or new_cost < cost_so_far[neighbour]:
 				cost_so_far[neighbour] = new_cost
 				came_from[neighbour].add(current)
 				frontier.put((new_cost, neighbour))
+			elif new_cost == cost_so_far[neighbour]:
+				came_from[neighbour].add(current)
 
 	return cost_so_far.get(current), came_from
 
@@ -178,7 +180,8 @@ start, end_east, end_north = get_start_end_locations(graph)
 shortest_path, path_2 = dijkstra_shortest_path(start, end_east, graph)
 print(f'Part A: {shortest_path}')
 
-# do a depth first search along path 1 going from end to start?
+# do a depth first search along the path going from end to start (traverse all shortest paths)
+# record all visited nodes along ANY shortest path
 current = end_east
 all_visited = set()
 path = deque()
@@ -189,18 +192,4 @@ while path:
 	for tile in path_2[current]:
 		if tile not in path:
 			path.append(tile)
-# print(all_visited)
-print(len(all_visited))
-
-
-# print(min(shortest_path_1, shortest_path_2))
-# print(length_1)
-
-# print(graph)
-
-# n = graph.neighbours(start)
-# pprint(n)
-
-# loc1 = Location(14, 5, 'W')
-# loc2 = Location(14, 5, 'S')
-# print(graph.cost(loc1, loc2))
+print(f'Part B: {len(all_visited)}')
