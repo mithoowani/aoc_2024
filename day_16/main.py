@@ -180,7 +180,7 @@ def dijkstra_shortest_path(start, end, graph_):
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
-# Part B
+# Part A
 # Note there is only one way to reach end goal in my real input (has to move in E direction)
 graph = Graph(parse_input(REAL_INPUT))
 starting_pos, ending_pos = get_start_end_locations(graph)
