@@ -160,8 +160,11 @@ total_cost, path = a_star_shortest_path(start, end, graph)
 shortest_path = generate_shortest_path(path, start, end)
 distances = {location: distance for distance, location in enumerate(reversed(shortest_path))}
 # pprint(distances)
-
 shortcuts = defaultdict(list)
+
+minimum_time_to_save = 100  # for real input in Part A/B
+
+# PART A
 for loc in shortest_path:
 	r, c = loc.row, loc.col
 	moves = (Location(r - 2, c), Location(r + 2, c), Location(r, c - 2), Location(r, c + 2),
@@ -172,7 +175,6 @@ for loc in shortest_path:
 			time_saved = distances[loc] - distances[move] - 2
 			shortcuts[loc].append(time_saved if time_saved > 0 else 0)
 # pprint(shortcuts)
-
 num_shortcuts = Counter()
 for time_saved in shortcuts.values():
 	num_shortcuts.update(time_saved)
@@ -180,16 +182,21 @@ num_shortcuts = dict(num_shortcuts)
 # pprint(num_shortcuts)
 
 answer = 0
-minimum_time_to_save = 100  # for real input in Part A
 for time_saved, num in num_shortcuts.items():
 	if time_saved >= minimum_time_to_save:
 		answer += num
 print(f'Part A: {answer}')
 
-# pprint(shortcuts)
-# pprint(Counter(shortcuts.values()))
+# PART B try 2
+count = 0
+for i, start in enumerate(shortest_path):
+	for j, end in enumerate(shortest_path[i:]):
+		manhattan_distance = abs(start.row - end.row) + abs(start.col - end.col)
+		if manhattan_distance <= 20:
+			time_saved = distances[start] - distances[end] - manhattan_distance
+			if time_saved >= minimum_time_to_save:
+				count += 1
+print(f'Part B: {count}')
 
-# pprint(shortest_path)
-# graph.print_path(shortest_path)
-# end_time = time()
-# print(f'{end_time-start_time}')
+# TODO: Get rid of the A* algorithm because there's only one path (one neighbour per tile)
+# TODO: Optimize part A to make it more consistent with part B
