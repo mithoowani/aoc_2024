@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pprint import pprint
 from collections import deque
+import random
 import numpy as np
 
 TEST_INPUT = """029A
@@ -39,11 +40,17 @@ class Pad:
 			if coord in self.coord_to_key:
 				neighbours[direction] = self.coord_to_key[coord]
 
+		# TODO: Randomizing the order of neighbours is an extremely hacky way of solving part 1
+		list_neighbours = list(neighbours.items())
+		random.shuffle(list_neighbours)
+		neighbours = dict(list_neighbours)
+
 		return neighbours
 
 	def shortest_path(self, start_key: str, end_key: str):
 
 		# TODO: This hard coding seems to work for the Dpad but not generalizable to the numpad
+		# TODO: Write a Dijkstra algorithm that penalizes turns probably
 		if start_key == '<' and end_key == 'A':
 			return list('>>^A')
 
@@ -123,11 +130,6 @@ class DPad(Pad):
 		self.coord_to_key = {value: key for key, value in self.key_to_coord.items()}
 
 
-part_A = 0
-keypad = Keypad()
-dpad = DPad()
-
-
 def get_sequence(key_combination: str, pad: Pad):
 	sequence = []
 	start = 'A'
@@ -139,13 +141,41 @@ def get_sequence(key_combination: str, pad: Pad):
 	return ''.join(sequence)
 
 
-for key_combination in TEST_INPUT.split('\n'):
-	level_1 = get_sequence(key_combination, keypad)
-	level_2 = get_sequence(level_1, dpad)
-	level_3 = get_sequence(level_2, dpad)
-	print(level_1, '\n', level_2, '\n', level_3)
-	print(len(level_3), int(key_combination[:-1]))
-	print()
+min_A = None
+
+keypad = Keypad()
+dpad = DPad()
+
+with open('input.txt', 'r') as f:
+	REAL_INPUT = f.read()
+
+for _ in range(10_000):
+	part_A = 0
+
+	for key_combination in REAL_INPUT.split('\n'):
+		level_1 = get_sequence(key_combination, keypad)
+		level_2 = get_sequence(level_1, dpad)
+		level_3 = get_sequence(level_2, dpad)
+		# print(level_1, '\n', level_2, '\n', level_3)
+		# print(len(level_3), int(key_combination[:-1]))
+		# print()
+
+		part_A += len(level_3) * int(key_combination[:-1])
+
+	if min_A is None or part_A < min_A:
+		min_A = part_A
+
+print(min_A)
+print()
+
+
+level_1 = '^A<<^^A>>AvvvA'  # <<^^A is preferred to ^^<<A
+level_2 = get_sequence(level_1, dpad)
+level_3 = get_sequence(level_2, dpad)
+print(level_1, '\n', level_2, '\n', level_3)
+print(len(level_3), 379)
+print()
+
 
 # WRONG: <AAA>Av<<A>^>Av<AAA^>AvA^A   -> the >^> adds an unnecessary turn compared to >>^ or ^>> [latter is invalid] to get from < to A
 # WRONG: v<<A>^>AAAvA^Av<A<AA>^>AvA^<Av>A^Av<A<A>^>AAA<Av>A^Av<A^>A<A>A (62 980)
