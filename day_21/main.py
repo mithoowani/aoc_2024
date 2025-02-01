@@ -40,12 +40,37 @@ class Pad:
 			if coord in self.coord_to_key:
 				neighbours[direction] = self.coord_to_key[coord]
 
-		# TODO: Randomizing the order of neighbours is an extremely hacky way of solving part 1
-		list_neighbours = list(neighbours.items())
-		random.shuffle(list_neighbours)
-		neighbours = dict(list_neighbours)
-
 		return neighbours
+
+
+class Keypad(Pad):
+	def __init__(self):
+		super().__init__()
+		"""
+		Keypad:
+		+---+---+---+
+		| 7 | 8 | 9 |
+		+---+---+---+
+		| 4 | 5 | 6 |
+		+---+---+---+
+		| 1 | 2 | 3 |
+		+---+---+---+
+			| 0 | A |
+    		+---+---+
+		"""
+		self.key_to_coord = {'7': (0, 0),
+							 '8': (0, 1),
+							 '9': (0, 2),
+							 '4': (1, 0),
+							 '5': (1, 1),
+							 '6': (1, 2),
+							 '1': (2, 0),
+							 '2': (2, 1),
+							 '3': (2, 2),
+							 '0': (3, 1),
+							 'A': (3, 2)}
+
+		self.coord_to_key = {value: key for key, value in self.key_to_coord.items()}
 
 	def shortest_path(self, start_key: str, end_key: str):
 
@@ -80,36 +105,6 @@ class Pad:
 		return directions
 
 
-class Keypad(Pad):
-	def __init__(self):
-		super().__init__()
-		"""
-		Keypad:
-		+---+---+---+
-		| 7 | 8 | 9 |
-		+---+---+---+
-		| 4 | 5 | 6 |
-		+---+---+---+
-		| 1 | 2 | 3 |
-		+---+---+---+
-			| 0 | A |
-    		+---+---+
-		"""
-		self.key_to_coord = {'7': (0, 0),
-							 '8': (0, 1),
-							 '9': (0, 2),
-							 '4': (1, 0),
-							 '5': (1, 1),
-							 '6': (1, 2),
-							 '1': (2, 0),
-							 '2': (2, 1),
-							 '3': (2, 2),
-							 '0': (3, 1),
-							 'A': (3, 2)}
-
-		self.coord_to_key = {value: key for key, value in self.key_to_coord.items()}
-
-
 class DPad(Pad):
 	def __init__(self):
 		super().__init__()
@@ -129,6 +124,32 @@ class DPad(Pad):
 
 		self.coord_to_key = {value: key for key, value in self.key_to_coord.items()}
 
+	def shortest_path(self, start_key, end_key):
+		# from reddit, original
+		# paths = {
+		# 	'A': {"A": [""], "^": ["<"], ">": ["v"], "v": ["<v", "v<"], "<": ["<v<", "v<<"]},
+		# 	'^': {"^": [""], "A": [">"], "v": ["v"], "<": ["v<"], ">": ["v>"]},
+		# 	'v': {"v": [""], "A": ["^>", ">^"], "^": ["^"], "<": ["<"], ">": [">"]},
+		# 	'<': {"<": [""], "A": [">>^", ">^>"], "^": [">^"], "v": [">"], ">": [">>"]},
+		# 	'>': {">": [""], "A": ["^"], "^": ["^<", "<^"], "v": ["<"], "<": ["<<"]},
+		# }
+
+		# My guess at the optimal paths between keypad buttons
+		# General principles are that:
+		# Repeated moves are preferable (e.g. >>^ over >^>)
+		# Cost from worst to best based on relative locations in keypad and testing
+		# <A ; vA ; ^A ; >A   [not 100% sure about ^A versus >A]
+
+		paths = {
+			'A': {"A": [""], "^": ["<"], ">": ["v"], "v": ["<v"], "<": ["v<<"]},
+			'^': {"^": [""], "A": [">"], "v": ["v"], "<": ["v<"], ">": ["v>"]},
+			'v': {"v": [""], "A": ["^>"], "^": ["^"], "<": ["<"], ">": [">"]},
+			'<': {"<": [""], "A": [">>^"], "^": [">^"], "v": [">"], ">": [">>"]},
+			'>': {">": [""], "A": ["^"], "^": ["<^"], "v": ["<"], "<": ["<<"]},
+		}
+
+		return paths[start_key][end_key][0] + 'A'
+
 
 def get_sequence(key_combination: str, pad: Pad):
 	sequence = []
@@ -141,55 +162,37 @@ def get_sequence(key_combination: str, pad: Pad):
 	return ''.join(sequence)
 
 
-min_A = None
-
 keypad = Keypad()
 dpad = DPad()
 
-with open('input.txt', 'r') as f:
-	REAL_INPUT = f.read()
+# This is what came out in a breadth first search (shortest path)
+real_inputs_auto = {'480A': '^^<<A^>AvvvA>A',
+					'682A': '^^A^<AvvAv>A',
+					'140A': '^<<A^Av>vA>A',
+					'246A': '^<A^<A>>AvvA',
+					'938A': '^^^AvvA^^<Avvv>A'}
 
-for _ in range(10_000):
-	part_A = 0
+# I modified this manually based on the rules above; and it generated a correct answer to part A
+real_inputs_optimal = {'480A': '^^<<A^>AvvvA>A',
+					   '682A': '^^A<^AvvAv>A',
+					   '140A': '^<<A^A>vvA>A',
+					   '246A': '<^A<^A>>AvvA',
+					   '938A': '^^^AvvA<^^Avvv>A'}
 
-	for key_combination in REAL_INPUT.split('\n'):
-		level_1 = get_sequence(key_combination, keypad)
-		level_2 = get_sequence(level_1, dpad)
-		level_3 = get_sequence(level_2, dpad)
-		# print(level_1, '\n', level_2, '\n', level_3)
-		# print(len(level_3), int(key_combination[:-1]))
-		# print()
+# Part A is the keypad input, and then two robots on top of that
+part_A = 0
+for line, keypad_input in real_inputs_optimal.items():
+	sequence_1 = get_sequence(keypad_input, dpad)
+	sequence_2 = get_sequence(sequence_1, dpad)
+	part_A += len(sequence_2) * int(line[:-1])
+print(f'{part_A=}')
 
-		part_A += len(level_3) * int(key_combination[:-1])
-
-	if min_A is None or part_A < min_A:
-		min_A = part_A
-
-print(min_A)
-print()
-
-
-level_1 = '^A<<^^A>>AvvvA'  # <<^^A is preferred to ^^<<A
-level_2 = get_sequence(level_1, dpad)
-level_3 = get_sequence(level_2, dpad)
-print(level_1, '\n', level_2, '\n', level_3)
-print(len(level_3), 379)
-print()
-
-
-# WRONG: <AAA>Av<<A>^>Av<AAA^>AvA^A   -> the >^> adds an unnecessary turn compared to >>^ or ^>> [latter is invalid] to get from < to A
-# WRONG: v<<A>^>AAAvA^Av<A<AA>^>AvA^<Av>A^Av<A<A>^>AAA<Av>A^Av<A^>A<A>A (62 980)
-# RIGHT: <v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A (60 980)
-
-# third_sequence = []
-# start = 'A'
-# for char in '<AAA>Av<<A>>^Av<AAA^>AvA^A':  # corrected string with minimal turns (>>^)
-# 	end = char
-# 	third_sequence.extend(dpad.shortest_path(start, end))
-# 	start = char
-# print()
-# print(''.join(third_sequence))
-# print(len(third_sequence))
-
-# For part 2 potentially
-# instructions = [sequence + 'A' for sequence in ''.join(second_sequence).split('A')[:-1]]
+# Part B is the keypad input followed by 25 additional sequences on top
+# TOO INEFFICIENT
+part_B = 0
+for line, keypad_input in real_inputs_optimal.items():
+	sequence = get_sequence(keypad_input, dpad)
+	for i in range(24):
+		sequence = get_sequence(sequence, dpad)
+	part_B += len(sequence) * int(line[:-1])
+print(f'{part_B=}')
