@@ -161,7 +161,7 @@ def dijkstra_shortest_path(start, end, graph_):
 		if current == end:
 			break
 
-		for neighbour in graph_.neighbours(current):
+		for neighbour in graph_.get_neighbours(current):
 			new_cost = cost_so_far[current] + graph_.cost(current, neighbour)
 
 			# Usual Dijkstra code to establish a shortest path
