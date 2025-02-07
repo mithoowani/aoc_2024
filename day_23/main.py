@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 from pprint import pprint
+from copy import copy
 
 TEST_INPUT = """kh-tc
 qp-kh
@@ -69,6 +70,32 @@ def search_cycle(start: str):
 	return cycles
 
 
+def is_clique(potential_clique: set[str]):
+	"""Checks whether each node in the potential_clique is connected to every other node; if True then
+	it satisfies the definition of a clique"""
+	potential_clique = list(potential_clique)
+	for i, pc_1 in enumerate(potential_clique):
+		for j in potential_clique[i + 1:]:
+			if j not in pcs[pc_1]:
+				return False
+	return True
+
+
+def find_largest_clique(current, clique=None):
+	"""Simple DFS to traverse the graph, adding one node at a time only if it meets the definition of a clique"""
+	if clique is None:
+		clique = set()
+
+	for neighbour in pcs[current]:
+		if neighbour not in clique:
+			longer_clique = copy(clique)
+			longer_clique.add(neighbour)
+			if is_clique(longer_clique):
+				clique = find_largest_clique(neighbour, longer_clique)
+
+	return clique
+
+
 # the same cycle can be recorded from a different start position, e.g. (co, ka, ta) and (ka, co, ta)
 # so delete duplicates again
 all_unique_cycles = set()
@@ -84,5 +111,11 @@ for cycle in all_unique_cycles:
 		if pc.startswith('t'):
 			part_A += 1
 			break
-
 print(f'{part_A=}')
+
+# Brute force approach to Part B
+all_cliques = set()
+for start in pcs:
+	all_cliques.add(tuple(sorted(find_largest_clique(start))))
+part_B = ','.join(sorted(all_cliques, key=lambda x: len(x), reverse=True)[0])
+print(f'{part_B=}')
