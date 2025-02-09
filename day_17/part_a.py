@@ -77,42 +77,30 @@ INSTRUCTIONS = {
 	7: cdv
 }
 
-# 1    2    3    4     5     6     7     8     9     10    11    12    13    14    15    16
-# 2^1, 2^4, 2^7, 2^10, 2^13, 2^16, 2^19, 2^22, 2^25, 2^28, 2^31, 2^34, 2^37, 2^40, 2^43, 2^46
-# 2, 16, 128, 1024, 8192, 65546, in forward direction
+starting_A = A
+pointer = 0
+output = []
 
-for A in range(8**16-200, 8**16, 1):
+while pointer < len(program):
 
-	starting_A = A
-	pointer = 0
-	output = []
-	B, C = 0, 0
+	# Have to re-initialize because A, B, C is updated regularly
+	COMBO_OPERANDS = {
+		0: 0,
+		1: 1,
+		2: 2,
+		3: 3,
+		4: A,
+		5: B,
+		6: C
+	}
 
-	while pointer < len(program):
+	instruction = INSTRUCTIONS[program[pointer]]
+	if instruction is jnz and A > 0:
+		instruction(program[pointer + 1])  # do not advance pointer further
+	elif instruction is jnz and A == 0:
+		pointer += 2  # do nothing
+	else:
+		instruction(program[pointer + 1])
+		pointer += 2
 
-		# Have to re-initialize because A, B, C is updated regularly
-		COMBO_OPERANDS = {
-			0: 0,
-			1: 1,
-			2: 2,
-			3: 3,
-			4: A,
-			5: B,
-			6: C
-		}
-
-		instruction = INSTRUCTIONS[program[pointer]]
-		if instruction is jnz and A > 0:
-			instruction(program[pointer + 1])  # do not advance pointer further
-		elif instruction is jnz and A == 0:
-			pointer += 2  # do nothing
-		else:
-			instruction(program[pointer + 1])
-			pointer += 2
-
-	print(starting_A, bin(starting_A), output)
-
-	# output = ','.join([str(digit) for digit in output])
-	# if output == [2, 4, 1, 1, 7, 5, 0, 3, 1, 4, 4, 0, 5, 5, 3, 0]:
-	# 	print(A)
-	# 	break
+print(f'Part A: {",".join([str(num) for num in output])}')
