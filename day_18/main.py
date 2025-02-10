@@ -52,8 +52,9 @@ class Graph:
 		return (loc.row, loc.col) not in self.walls
 
 	def neighbours(self, loc: Location):
-		"""Returns neighbours of the current location; neighbours are a left or right turn in place or advance
-		by 1 tile in the current direction"""
+		"""Returns neighbours of the current location; neighbours are 1 space up, down, left or right
+		from the current location"""
+
 		row, col = loc.row, loc.col
 		neighbours = []
 
@@ -78,19 +79,18 @@ with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
 HEIGHT, WIDTH = 71, 71
-# num_bytes = 1024
 walls = parse_input(REAL_INPUT)
 
-for num_bytes in range(1024, len(walls)):
-	print(num_bytes)
-	graph = Graph(walls, HEIGHT, WIDTH)
+
+def part_A():
+	"""BFS using graph with first 1024 walls"""
 	start = Location(row=0, col=0)
 	end = Location(row=HEIGHT - 1, col=WIDTH - 1)
 
 	frontier = deque([start])
 	came_from = {start: None}
 
-	graph = Graph(walls[:num_bytes], HEIGHT, WIDTH)
+	graph = Graph(walls[:1024], HEIGHT, WIDTH)
 	while frontier:
 		current = frontier.popleft()
 
@@ -102,13 +102,40 @@ for num_bytes in range(1024, len(walls)):
 				frontier.append(neighbour)
 				came_from[neighbour] = current
 
-	if current != end:
-		print(num_bytes)
+	length_of_path = 0
+	current = end
+	while current != start:
+		current = came_from[current]
+		length_of_path += 1
 
-# path = []
-# current = end
-# while current != start:
-# 	current = came_from[current]
-# 	path.append(current)
-#
-# print(len(path))
+	return length_of_path
+
+
+def part_B():
+	"""Inefficient but works... repeatedly does a BFS search until the path is blocked"""
+	for num_bytes in range(1024, len(walls)):
+		start = Location(row=0, col=0)
+		end = Location(row=HEIGHT - 1, col=WIDTH - 1)
+
+		frontier = deque([start])
+		came_from = {start: None}
+
+		graph = Graph(walls[:num_bytes], HEIGHT, WIDTH)
+		while frontier:
+			current = frontier.popleft()
+
+			if current == end:
+				break
+
+			for neighbour in graph.neighbours(current):
+				if neighbour not in came_from:
+					frontier.append(neighbour)
+					came_from[neighbour] = current
+
+		if current != end:
+			return num_bytes
+
+
+print(f'part A: {part_A()}')
+last_wall = part_B()
+print(f'part B: {walls[last_wall - 1][1], walls[last_wall - 1][0]}')
