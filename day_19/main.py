@@ -1,4 +1,3 @@
-from pprint import pprint
 from functools import cache
 
 TEST_INPUT = """r, wr, b, g, bwu, rb, gb, br
@@ -23,50 +22,47 @@ def parse_input(puzzle):
 
 # REMEMBER TO ADJUST MAX_LEN DEPENDING ON TEST OR REAL INPUT
 @cache
-def is_possible(word, pointer=0, max_len=8, sequences=0):
-	if pointer >= len(word):
+def is_possible(arrangement, pointer=0, max_len=8, sequences=0):
+	"""
+	Returns number of ways the arrangement can be made with the available towels (answer to part B).
+
+	max_len is the longest pattern in a single towel from the puzzle input (this would be 3 in the TEST_INPUT
+	but 8 in the real input.
+
+	The idea is to hash all the individual towels and then build the towel arrangement
+	one towel at a time (recursively). The exit condition is the pointer reaching the end of the arrangement
+	"""
+
+	if pointer >= len(arrangement):
 		return 1
 
 	else:
-		if pointer + max_len > len(word):
-			endpoint = len(word)
+		if pointer + max_len > len(arrangement):
+			endpoint = len(arrangement)
 
 		else:
 			endpoint = pointer + max_len
 
 		for i in range(pointer, endpoint):
-			# print(word[pointer:i + 1])
-			if l.get(word[pointer:i + 1]):
-				sequences += is_possible(word, i + 1)
+			if towels.get(arrangement[pointer:i + 1]):
+				sequences += is_possible(arrangement, i + 1)
 
 	return sequences
-
-
-# return sequences
-
-# if valid:
-# 	sequences += 1
-# sequence.append(word[pointer:i + 1])
 
 
 with open('input.txt') as f:
 	REAL_INPUT = f.read()
 
-count = 0
-total_sequences = 0
+part_A = 0
+part_B = 0
 
-l, w = parse_input(REAL_INPUT)
+towels, arrangements = parse_input(REAL_INPUT)
 
-for word in w:
-	sq = is_possible(word)
-	total_sequences += sq
+for arrangement in arrangements:
+	sq = is_possible(arrangement)
+	part_B += sq
 	if sq:
-		count += 1
+		part_A += 1
 
-# print(f'{word} is VALID')
-# print(sequences)
-# else:
-# 	print(f'{word}')
-
-print(f'{count=}')
-print(f'{total_sequences=}')
+print(f'{part_A=}')
+print(f'{part_B=}')
