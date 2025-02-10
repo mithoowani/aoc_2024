@@ -1,8 +1,5 @@
-from queue import PriorityQueue
 from dataclasses import dataclass
-from collections import Counter, defaultdict
-from pprint import pprint
-from time import time
+from collections import deque
 import numpy as np
 
 TEST_INPUT = """###############
@@ -48,8 +45,7 @@ class Graph:
 		return (loc.row, loc.col) not in self.walls
 
 	def neighbours(self, loc: Location):
-		"""Returns neighbours of the current location; neighbours are a left or right turn in place or advance
-		by 1 tile in the current direction"""
+		"""Returns neighbours of the current location"""
 
 		# no neighbours because location is invalid
 		if not self.in_bounds(loc) or not self.passable(loc):
@@ -65,14 +61,6 @@ class Graph:
 
 		return neighbours
 
-	@staticmethod
-	def cost(loc1: Location, loc2: Location):
-		"""Returns cost associated with moving from loc1 to loc2"""
-		if abs(loc1.row - loc2.row) + abs(loc1.col - loc2.col) == 1:
-			return 1
-		else:
-			raise Exception('Not neighbours')
-
 	def print_path(self, path):
 		"""Helper function that displays the shortest path"""
 		for location in path:
@@ -80,8 +68,7 @@ class Graph:
 		print(str(self))
 
 	def __str__(self):
-		for line in self.graph:
-			string_line = '\n'.join([''.join(list(line)) for line in self.graph])
+		string_line = '\n'.join([''.join(list(line)) for line in self.graph])
 		return string_line
 
 
@@ -105,35 +92,23 @@ def get_start_end_locations(graph_: Graph):
 	return start, end
 
 
-def heuristic(loc1: Location, loc2: Location):
-	"""Returns Manhattan distance between loc1 and loc2"""
-	return abs(loc1.row - loc2.row) + abs(loc1.col - loc2.col)
-
-
-def a_star_shortest_path(start, end, graph_):
-	# Frontier is a priority queue, so that it remains sorted by priority (cost)
-	# Entries in the priority queue are in the form (cost, location)
-	current = None
-	frontier = PriorityQueue()
-	cost_so_far = {start: 0}
-	came_from = dict()
-	frontier.put((cost_so_far[start], start))
+def bfs_shortest_path(start, end, graph_):
+	"""Simple BFS for a 2D graph"""
+	frontier = deque([start])
+	came_from = {start: None}
 
 	while frontier:
-		current = frontier.get()[1]
+		current = frontier.popleft()
 
 		if current == end:
 			break
 
 		for neighbour in graph_.neighbours(current):
-			new_cost = cost_so_far[current] + graph_.cost(current, neighbour)
-
-			if neighbour not in cost_so_far or new_cost < cost_so_far[neighbour]:
-				cost_so_far[neighbour] = new_cost
+			if neighbour not in came_from:
 				came_from[neighbour] = current
-				frontier.put((new_cost + heuristic(neighbour, end), neighbour))
+				frontier.append(neighbour)
 
-	return cost_so_far.get(current), came_from
+	return came_from
 
 
 def generate_shortest_path(path_, start_, end_):
@@ -151,52 +126,40 @@ def generate_shortest_path(path_, start_, end_):
 with open('input.txt', 'r') as f:
 	REAL_INPUT = f.read()
 
-# start_time = time()
+# In retrospect, because there is only one path from start to end, the graph/BFS search is way overkill... oh well
 graph = Graph(parse_input(REAL_INPUT))
 start, end = get_start_end_locations(graph)
-total_cost, path = a_star_shortest_path(start, end, graph)
-# print(f'{start=}, {end=}')
-# print(f'{total_cost=}')
+path = bfs_shortest_path(start, end, graph)
 shortest_path = generate_shortest_path(path, start, end)
+
+# a dictionary that maps every location to distance from the endpoint
 distances = {location: distance for distance, location in enumerate(reversed(shortest_path))}
-# pprint(distances)
-shortcuts = defaultdict(list)
 
 minimum_time_to_save = 100  # for real input in Part A/B
+cheat_duration_a = 2  # 2 picoseconds for part A
+cheat_duration_b = 20  # 20 picoseconds for part B
 
-# PART A
-for loc in shortest_path:
-	r, c = loc.row, loc.col
-	moves = (Location(r - 2, c), Location(r + 2, c), Location(r, c - 2), Location(r, c + 2),
-			 Location(r - 1, c - 1), Location(r - 1, c + 1), Location(r + 1, c - 1), Location(r + 1, c + 1))
+# Approach is to iterate through the shortest path and identify all possible cheats;
+# i.e. squares further along the path that can be reached within 2 picoseconds (for part A) or
+# 20 picoseconds (for part B) by calculating Manhattan distance from the current locaton
+# If the time_saved is >= 100 picoseconds, then count it
 
-	for move in moves:
-		if graph.passable(move) and graph.in_bounds(move):
-			time_saved = distances[loc] - distances[move] - 2
-			shortcuts[loc].append(time_saved if time_saved > 0 else 0)
-# pprint(shortcuts)
-num_shortcuts = Counter()
-for time_saved in shortcuts.values():
-	num_shortcuts.update(time_saved)
-num_shortcuts = dict(num_shortcuts)
-# pprint(num_shortcuts)
-
-answer = 0
-for time_saved, num in num_shortcuts.items():
-	if time_saved >= minimum_time_to_save:
-		answer += num
-print(f'Part A: {answer}')
-
-# PART B try 2
-count = 0
+part_A = 0
+part_B = 0
 for i, start in enumerate(shortest_path):
 	for j, end in enumerate(shortest_path[i:]):
 		manhattan_distance = abs(start.row - end.row) + abs(start.col - end.col)
-		if manhattan_distance <= 20:
-			time_saved = distances[start] - distances[end] - manhattan_distance
-			if time_saved >= minimum_time_to_save:
-				count += 1
-print(f'Part B: {count}')
 
-# TODO: Get rid of the A* algorithm because there's only one path (one neighbour per tile)
-# TODO: Optimize part A to make it more consistent with part B
+		# time saved is: time needed to reach goal from original square along shortest path
+		# 				 - time needed to reach goal from new "cheat" square
+		# 				 - time spent traveling from the original to the cheat square
+		time_saved = distances[start] - distances[end] - manhattan_distance
+
+		if time_saved >= minimum_time_to_save:
+			if manhattan_distance <= cheat_duration_a:
+				part_A += 1
+			if manhattan_distance <= cheat_duration_b:
+				part_B += 1
+
+print(f'Part A: {part_A}')
+print(f'Part B: {part_B}')
